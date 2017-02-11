@@ -1,5 +1,4 @@
 #include "pitches.h"
-#include "got.h"
 
 // Pins
 const int temperatureSensorPin = A0;
@@ -7,21 +6,21 @@ const int resetButtonPin = 2;
 const int soundPin = 3;
 
 // Thresholds
-const float temperatureThreshold = 20.0;
-const long initialTimeThreshold = 600000; // 10 minutes
-long timeThreshold = initialTimeThreshold;
+const float temperatureThreshold = 25.0;
+const unsigned long initialTimeThreshold = 10000;
 
-// States
-int buttonState = 0, lastButtonState = 0;
-unsigned long startTime;
-bool active = false;
-float temperature;
-
-// Configuration
+// Multiplier
 const int timeThresholdMultiplier = 3;
 
+// Variables
+unsigned long timeThreshold, startTime, currentTime;
+int buttonState, lastButtonState;
+float temperature;
+bool active;
+
+// Time Functions
 void resetTimer() {
-  startTime = millis();
+  startTime = currentTime;
   active = false;
 }
 
@@ -30,24 +29,24 @@ void startTimer() {
   active = true;
 }
 
-void printDebugInfo() {
-  Serial.print("Temperature: ");
-  Serial.print(temperature);
-  Serial.print("\tStart Time: ");
-  Serial.print(startTime);
-  Serial.print("\tTimeThreshold: ");
-  Serial.print(timeThreshold);
-  Serial.print("\t Time Difference: ");
-  Serial.println(millis() - startTime);
+unsigned long getPassedTime() {
+  return currentTime - startTime;
 }
 
+// Temperature Functions
 float readTemperature(int temperatureSensorPin) {
   int temperatureSensorValue = analogRead(temperatureSensorPin);
   float voltage = (temperatureSensorValue / 1024.0) * 5.0;
   return (voltage - .5) * 100;
 }
 
-void playAlarm(int soundPin) {
+
+bool hasTemperatureExceededThreshold() {
+  return temperature >= temperatureThreshold;
+}
+
+// Sound Functions
+void playAlarm() {
   int melody[] = {
     NOTE_E3, NOTE_A3, NOTE_C3, NOTE_D3, NOTE_E3, NOTE_A3, NOTE_C3, NOTE_D3
   };
@@ -69,41 +68,62 @@ void playAlarm(int soundPin) {
   }
 }
 
+void printDebugInfo() {
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.print("\tDifference: ");
+  Serial.println(temperature - temperatureThreshold);
+
+  Serial.print("Current Time: ");
+  Serial.print(currentTime);
+  Serial.print("\tTimer Start Time: ");
+  Serial.print(startTime);
+  Serial.print("\tPassed Time Since: ");
+  Serial.print(getPassedTime());
+  Serial.print("\tThreshold:");
+  Serial.println(timeThreshold);
+
+  Serial.println("==================================================");
+}
+
 void setup() {
+  // IO
+  Serial.begin(9600);
   pinMode(temperatureSensorPin, INPUT);
   pinMode(resetButtonPin, INPUT);
   pinMode(soundPin, OUTPUT);
+  // Initial values
+  timeThreshold = initialTimeThreshold;
   startTime = millis();
-  Serial.begin(9600);
+  active = false;
 }
 
 void loop() {
-  unsigned long currentTime = millis();
+  currentTime = millis();
 
-  // Check if we need to reset time
+  // Check if we need to reset
   buttonState = digitalRead(resetButtonPin);
-  if (buttonState != lastButtonState) { // has it changed
-    if (buttonState == HIGH) { // is it pressed
-      resetTimer();
-      tone(soundPin, NOTE_A4, 500); // confirmation
-      timeThreshold =  timeThresholdMultiplier * initialTimeThreshold;
-    }
+  if (buttonState != lastButtonState && buttonState == HIGH) { // it was pressed now
+    resetTimer();
+    tone(soundPin, NOTE_A4, 500); // confirmation
+    timeThreshold = timeThresholdMultiplier * initialTimeThreshold;
   }
   lastButtonState = buttonState;
 
+
   temperature = readTemperature(temperatureSensorPin);
-  printDebugInfo();
-  if (temperature <= temperatureThreshold) {   // if temperature is below threshold
-    if (active) {
-      if (currentTime - startTime > timeThreshold) {
-        playAlarm(soundPin);
-      }
-    } else { // put into active mode
+  if (hasTemperatureExceededThreshold()) {
+    if (!active) {
       startTimer();
+    }
+    if (getPassedTime() > timeThreshold) {
+      playAlarm();
     }
   } else {
     resetTimer();
   }
+
   delay(500);
 }
+
 
