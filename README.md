@@ -13,7 +13,8 @@ There's also a reset button that will reset the timer and extend the interval to
 # Wiring Diagram
 Please don't stone me to death, it's my first electronics project and it works :) I'm not an expert on wiring or notation.
 
-Diagram coming up next!
+![Wiring Diagram](https://github.com/lroellin/temperature-alarm/blob/master/Diagram.png?raw=true "Wiring Diagram")
+
 
 # Credits
 * Melody and pitches from: https://www.arduino.cc/en/Tutorial/ToneMelody?from=Tutorial.Tone 
