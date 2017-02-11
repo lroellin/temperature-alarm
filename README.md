@@ -11,3 +11,6 @@ After the temperature threshold has been exceeded, a timer is starting. If the t
 There's also a reset button that will reset the timer and extend the interval to suppress the alarm. The extension (multiplier) is also configurable.
 
 Diagram coming up next!
+
+# Credits
+* Melody and pitches from: https://www.arduino.cc/en/Tutorial/ToneMelody?from=Tutorial.Tone 
