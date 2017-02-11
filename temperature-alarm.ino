@@ -17,14 +17,9 @@ bool timerSet = false;
 // Configuration
 const int timeThresholdMultiplier = 3;
 
-void resetTimer(int soundPin) {
-  // Play confirmation
-  // Reset
-  tone(soundPin, NOTE_A4, 500);
+void resetTimer() {
   startTime = millis();
   timerSet = false;
-  // Double threshold on reset
-  timeThreshold *= timeThresholdMultiplier;
 }
 
 float readTemperature(int temperatureSensorPin) {
@@ -33,7 +28,7 @@ float readTemperature(int temperatureSensorPin) {
   return (voltage - .5) * 100;
 }
 
-void playSound(int soundPin) {
+void playAlarm(int soundPin) {
   int melody[] = {
     NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
   };
@@ -71,26 +66,26 @@ void loop() {
   buttonState = digitalRead(resetButtonPin);
   if (buttonState != lastButtonState) { // has it changed
     if (buttonState == HIGH) { // is it pressed
-      resetTimer(soundPin);
+      resetTimer();
+      tone(soundPin, NOTE_A4, 500);
+      timeThreshold *= timeThresholdMultiplier;
     }
   }
   lastButtonState = buttonState;
 
-  // Read degrees C
   float temperature = readTemperature(temperatureSensorPin);
   Serial.println(temperature);
-  // if temperature is below threshold
-  if (temperature <= temperatureThreshold) {
-    // if timer is already set
+  if (temperature <= temperatureThreshold) {   // if temperature is below threshold
     if (timerSet) {
-      // should we play an alarm?
       if (currentTime - startTime > timeThreshold) {
-        playSound(soundPin);
+        playAlarm(soundPin);
       }
-    } else { // we need to set the timer
+    } else {
       startTime = millis();
       timerSet = true;
     }
+  } else {
+    resetTimer();
   }
   delay(500);
 }
