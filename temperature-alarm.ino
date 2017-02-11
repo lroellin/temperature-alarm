@@ -1,4 +1,5 @@
 #include "pitches.h"
+#include "got.h"
 
 // Pins
 const int temperatureSensorPin = A0;
@@ -7,19 +8,37 @@ const int soundPin = 3;
 
 // Thresholds
 const float temperatureThreshold = 20.0;
-long timeThreshold = 10000;
+const long initialTimeThreshold = 600000; // 10 minutes
+long timeThreshold = initialTimeThreshold;
 
 // States
 int buttonState = 0, lastButtonState = 0;
 unsigned long startTime;
-bool timerSet = false;
+bool active = false;
+float temperature;
 
 // Configuration
 const int timeThresholdMultiplier = 3;
 
 void resetTimer() {
   startTime = millis();
-  timerSet = false;
+  active = false;
+}
+
+void startTimer() {
+  startTime = millis();
+  active = true;
+}
+
+void printDebugInfo() {
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.print("\tStart Time: ");
+  Serial.print(startTime);
+  Serial.print("\tTimeThreshold: ");
+  Serial.print(timeThreshold);
+  Serial.print("\t Time Difference: ");
+  Serial.println(millis() - startTime);
 }
 
 float readTemperature(int temperatureSensorPin) {
@@ -30,12 +49,11 @@ float readTemperature(int temperatureSensorPin) {
 
 void playAlarm(int soundPin) {
   int melody[] = {
-    NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
+    NOTE_E3, NOTE_A3, NOTE_C3, NOTE_D3, NOTE_E3, NOTE_A3, NOTE_C3, NOTE_D3
   };
-
   // note durations: 4 = quarter note, 8 = eighth note, etc.:
   int noteDurations[] = {
-    4, 8, 8, 4, 4, 4, 4, 4
+    4, 4, 8, 8, 4, 4, 8, 8
   };
 
   for (int thisNote = 0; thisNote < 8; thisNote++) {
@@ -67,22 +85,21 @@ void loop() {
   if (buttonState != lastButtonState) { // has it changed
     if (buttonState == HIGH) { // is it pressed
       resetTimer();
-      tone(soundPin, NOTE_A4, 500);
-      timeThreshold *= timeThresholdMultiplier;
+      tone(soundPin, NOTE_A4, 500); // confirmation
+      timeThreshold =  timeThresholdMultiplier * initialTimeThreshold;
     }
   }
   lastButtonState = buttonState;
 
-  float temperature = readTemperature(temperatureSensorPin);
-  Serial.println(temperature);
+  temperature = readTemperature(temperatureSensorPin);
+  printDebugInfo();
   if (temperature <= temperatureThreshold) {   // if temperature is below threshold
-    if (timerSet) {
+    if (active) {
       if (currentTime - startTime > timeThreshold) {
         playAlarm(soundPin);
       }
-    } else {
-      startTime = millis();
-      timerSet = true;
+    } else { // put into active mode
+      startTimer();
     }
   } else {
     resetTimer();
