@@ -17,4 +17,4 @@ Please don't stone me to death, it's my first electronics project and it works :
 
 
 # Credits
-* Melody and pitches from: https://www.arduino.cc/en/Tutorial/ToneMelody?from=Tutorial.Tone 
+* Pitches from: https://www.arduino.cc/en/Tutorial/ToneMelody?from=Tutorial.Tone 
