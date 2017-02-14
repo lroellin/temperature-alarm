@@ -46,6 +46,7 @@ bool hasTemperatureExceededThreshold() {
 }
 
 // Sound Functions
+// Note that this function introduces delays to play the melody correctly, so don't do any real-time stuff with it
 void playAlarm() {
   int melody[] = {
     NOTE_E3, NOTE_A3, NOTE_C3, NOTE_D3, NOTE_E3, NOTE_A3, NOTE_C3, NOTE_D3
